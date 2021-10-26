@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request, abort
 from flask_sqlalchemy import SQLAlchemy
+from flasgger import Swagger
 from sqlalchemy.sql import text
 from sqlalchemy import func
 import os
@@ -22,6 +23,7 @@ sentry_sdk.init(
 app = Flask(__name__)
 app.config.from_object('config.DevelopmentConfig')
 db = SQLAlchemy(app)
+swagger = Swagger(app)
 
 @app.route('/')
 def hello_world():
@@ -41,6 +43,13 @@ def trigger_error():
 
 @app.route('/artists')
 def artist_list():
+    """
+    Artists endpoint returning a list of artists
+    ---
+    responses:
+        200:
+            description: A list of artists
+    """
     query = models.Artist.query.all()
     artists = [{'id': artist.artist_id, 'name': artist.artist_name} for artist in query]
     
@@ -108,29 +117,37 @@ def event_list():
             func.lower(Genres.genre_name) == genre_input.lower()
         ).one_or_none()
     
-    
     for event in events_query:
         event_artist_query = Event_Artist.query.filter(
             Event_Artist.event_id == event.event_id
         ).one_or_none()
-
-        print(f'EVENT ARTIST QUERY: {event.event_id}')
-        if event_artist_query != None:
+        
+        if event_artist_query == None:
+            continue
+        else:
             genre_names = []
-            
             artist_query = Artist.query.filter(
                 Artist.artist_id == event_artist_query.artist_id).one_or_none()
             
-            if genre_input:
-                genre_names.append(genre_query.genre_name)
+            if genre_input and genre_input.lower() == genre_query.genre_name.lower():
+                artist_genre_query = ArtistGenre.query\
+                    .join(Genres, ArtistGenre.genre_id == Genres.genre_id)\
+                    .filter(ArtistGenre.artist_id == artist_query.artist_id,
+                        ArtistGenre.genre_id == genre_query.genre_id)
+                artist_genre_matches = len([artist_genre for artist_genre in artist_genre_query])
+                if artist_genre_matches < 1:
+                    continue
+                else:
+                    genre_names.append(genre_query.genre_name)
             else:
-                artist_genre_query = ArtistGenre.query.filter(
-                    ArtistGenre.artist_id == artist_query.artist_id
-                )
                 genre_ids = [item.genre_id for item in artist_genre_query]
                 genres_query = Genres.query.filter(
                     Genres.genre_id.in_(genre_ids))
                 genre_names = [genre.genre_name for genre in genres_query]
+            
+                artist_genre_query = ArtistGenre.query\
+                    .join(Genres, ArtistGenre.genre_id == Genres.genre_id)\
+                    .filter(ArtistGenre.artist_id == artist_query.artist_id)          
             
             if metro_input:  
                 venue = [venue for venue in venues_query if venue.venue_id == event.venue_id][0]

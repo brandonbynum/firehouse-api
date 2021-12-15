@@ -106,7 +106,7 @@ def event_list():
     
     # TODO: Error handling to return 500 or 400 errors
     res = event_service.upcoming_events_test(genre_input, metro_input)
-    json_output = json.dumps(res, indent=4, sort_keys=True, default=dateToStringConverter)
+    json_output = json.dumps(res, indent=4, default=dateToStringConverter)
     
     return json_output
 

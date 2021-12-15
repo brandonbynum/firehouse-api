@@ -1,9 +1,4 @@
-from flask import jsonify
-from sqlalchemy import func
-import json
-import datetime
 import models
-from utilities.pretty_print import pretty_print
 
 class EventService():
     def __init__(self):
@@ -18,13 +13,13 @@ class EventService():
         
     def upcoming_events_test(self, genre=None, metro=None):
         all_filters = []
+        event_list = []
+
         if metro:
             all_filters.append(self.Metropolitan_Area.metropolitan_name == metro)
         if genre:
             all_filters.append(self.Genres.genre_name == genre)
-            
-        print(all_filters)
-            
+                        
         query = self.Events.query\
             .filter(*all_filters)\
             .join(self.Event_Artist, self.Events.event_id == self.Event_Artist.event_id)\
@@ -39,24 +34,38 @@ class EventService():
                         self.Genres.genre_name, self.Venues.venue_id, self.Venues.venue_name, self.Venues.venue_address, 
                         self.Metropolitan_Area.metropolitan_name)\
             .all()
+        
+        for row in query: 
+            artist_dict = {
+                'name': row.artist_name,
+                'is_headliner': row.is_headliner,
+            }  
+            event_id = row.event_id
+            event_index_dict = {event_list[index]['event_id']: index for index, event in enumerate(event_list)}
             
-        res = []
-        for row in query:
-            res.append({
-                'artist': {
-                    'name': row.artist_name,
-                    'is_headliner': row.is_headliner,
-                },
-                'event_id': row.event_id,
-                'genres': row.genre_name,
-                'date': row.event_date,
-                'start_at': row.event_start_at,
-                'tickets_url': row.tickets_link,
-                'type': row.event_type,
-                'venue': {
-                    'name': row.venue_name,
-                    'address': row.venue_address
-                },
+            if event_id in event_index_dict.keys():
+                event_index = event_index_dict[event_id]
+                event_genres = event_list[event_index]['genres']
+                event_artists = event_list[event_index]['artists']
+                genre_name = row.genre_name
                 
-            })
-        return res
+                if artist_dict['name'] not in [artist['name'] for artist in event_artists]:
+                    event_artists.append(artist_dict)
+                
+                if genre_name not in event_genres:
+                    event_genres.append(genre_name)
+            else:   
+                event_list.append({
+                    'event_id': row.event_id,
+                    'artists': [artist_dict],
+                    'genres': [row.genre_name],
+                    'date': row.event_date,
+                    'start_at': row.event_start_at,
+                    'tickets_url': row.tickets_link,
+                    'type': row.event_type,
+                    'venue': {
+                        'name': row.venue_name,
+                        'address': row.venue_address
+                    },
+                })
+        return event_list

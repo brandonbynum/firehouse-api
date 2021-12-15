@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Time
+from sqlalchemy.sql import func
 from flask_migrate import Migrate
 import json
 
@@ -25,8 +26,8 @@ class Artist(db.Model):
     
     def serializer(self):
         return {
-            'id': self.artist_id,
-            'name': self.artist_name,
+            'artist_id': self.artist_id,
+            'artist_name': self.artist_name,
         }
     
 class ArtistGenre(db.Model):
@@ -38,6 +39,13 @@ class ArtistGenre(db.Model):
         self.artist_genre_id = artist_genre_id
         self.artist_id = artist_id
         self.genre_id = genre_id
+        
+    def __repr_(self):
+        return {
+            'id': self.artist_genre_id,
+            'artist_id': self.artist_id,
+            'genre_id': self.genre_id,
+        }  
         
     def serializer(self):
         return {
@@ -58,7 +66,16 @@ class MetropolitanArea(db.Model):
     def __init__(self):
         self.metropolitan_id = metropolitan_id
         self.metropolitan_name = metropolitan_name
-
+        
+    def __repr_(self):
+        return f'<MetropolitanArea {self.metropolitan_name!r}>'  
+    
+    
+    def serializer(self):
+        return {
+            'metropolitan_id': self.metropolitan_id,
+            'metropolitan_name': self.metropolitan_name,
+        }
     class Meta:
         managed = False
         db_table = 'metropolitan_area'
@@ -76,6 +93,19 @@ class Cities(db.Model):
         self.city_state = city_state
         self.city_country = city_country
         self.metropolitan_id = metropolitan_id
+    
+    def __repr_(self):
+        return f'<Cities {self.city_name!r}>'  
+    
+    def serializer(self):
+        return {
+            'city_id': self.city_id,
+            'city_name': self.city_name,
+            'city_state': self.city_state,
+            'city_country': self.city_country,
+            'metropolitan_id': self.metropolitan_id,
+        }
+        
 
     class Meta:
         managed = False
@@ -95,8 +125,12 @@ class EventArtist(db.Model):
         self.is_headliner = is_headliner
         self.created_at = created_at
         
-    def __repr__(self):
-        return self.event_id
+    def __repr_(self):
+        return {
+            'event_id': self.event_id,
+            'artist_id': self.artist_id,
+            'headliner': self.is_headliner,
+        } 
     
     def serializer(self):
         return {
@@ -114,10 +148,10 @@ class Events(db.Model):
     event_id = Column(Integer, primary_key=True)
     venue_id = Column(Integer, ForeignKey('venue.venue_id'), nullable=True)
     event_name = Column(String)
-    event_start_at = Column(Time, nullable=True)
-    event_end_at = Column(Time, nullable=True)
+    event_start_at = Column(Time, nullable=True, server_default=func.now())
+    event_end_at = Column(Time, nullable=True, server_default=func.now())
     tickets_link = Column(Text, nullable=True)
-    event_date = Column(DateTime, nullable=True)
+    event_date = Column(DateTime, nullable=True, server_default=func.now())
     event_type = Column(Text)
     created_on = Column(DateTime)
     
@@ -132,8 +166,29 @@ class Events(db.Model):
         self.event_type = event_type
         self.created_on = created_on
 
-    def __repr__(self):
-        return self.event_name
+    def __repr_(self):
+        return {
+            'event_id': self.event_id,
+            'venue_id': self.venue_id,
+            'event_name': self.event_name,
+            'event_start_at': self.event_start_at,
+            'event_end_at':self.event_end_at,
+            'tickets_link': self.tickets_link,
+            'event_date': self.event_date.is_format(),
+            'event_type': self.event_type,    
+        } 
+    
+    def serializer(self):
+        return {
+            'event_id': self.event_id,
+            'venue_id': self.venue_id,
+            'event_name': self.event_name,
+            'event_start_at': self.event_start_at,
+            'event_end_at':self.event_end_at,
+            'tickets_link': self.tickets_link,
+            'event_date': self.event_date.is_format(),
+            'event_type': self.event_type,    
+        } 
 
     class Meta:
         managed = False
@@ -149,7 +204,7 @@ class Genres(db.Model):
         self.genre_name = genre_name
     
     def __repr_(self):
-        return f'{self.genre_name!r}'
+        return f'<Genres {self.genre_name!r}>'  
     
     def serializer(self):
         return {

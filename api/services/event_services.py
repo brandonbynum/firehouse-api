@@ -1,6 +1,3 @@
-from flask import jsonify
-from sqlalchemy import func
-
 import models
 
 class EventService():
@@ -14,98 +11,61 @@ class EventService():
         self.Metropolitan_Area = models.MetropolitanArea
         self.Venues = models.Venues
         
-    def get_event_details(self, genre, metro):
-        artist_genre_query = None
-        event_artist_query = None
-        cities_query = None
-        events_query = None
-        genre_query = None
-        metro_query = None
-        venues_query = None
-        
-        event_details = []
+    def upcoming_events_test(self, genre=None, metro=None):
+        all_filters = []
+        event_list = []
 
         if metro:
-            metro_query = self.Metropolitan_Area.query.filter(
-                func.lower(self.Metropolitan_Area.metropolitan_name) == metro.lower()
-            ).one_or_none()
-            
-            cities_query = self.Cities.query.filter_by(
-                metropolitan_id=metro_query.metropolitan_id
-            ).all()
-            city_ids = [city.city_id for city in cities_query]
-
-            venues_query = self.Venues.query.filter(
-                self.Venues.city_id.in_(city_ids))
-            venue_ids = [venue.venue_id for venue in venues_query]
-            events_query = self.Events.query.filter(
-                self.Events.venue_id.in_(venue_ids))
-            
+            all_filters.append(self.Metropolitan_Area.metropolitan_name == metro)
         if genre:
-            # TODO: 404 or none on events query
-            genre_query = self.Genres.query.filter(
-                func.lower(self.Genres.genre_name) == genre.lower()).one_or_none()
+            all_filters.append(self.Genres.genre_name == genre)
+                        
+        query = self.Events.query\
+            .filter(*all_filters)\
+            .join(self.Event_Artist, self.Events.event_id == self.Event_Artist.event_id)\
+            .join(self.Venues, self.Events.venue_id == self.Venues.venue_id)\
+            .join(self.Cities, self.Venues.city_id == self.Cities.city_id)\
+            .join(self.Metropolitan_Area, self.Cities.metropolitan_id == self.Metropolitan_Area.metropolitan_id)\
+            .join(self.Artist, self.Event_Artist.artist_id == self.Artist.artist_id)\
+            .join(self.ArtistGenre, self.Artist.artist_id == self.ArtistGenre.artist_id)\
+            .join(self.Genres, self.Genres.genre_id == self.ArtistGenre.genre_id)\
+            .add_columns(self.Events.event_id, self.Events.event_date, self.Events.event_start_at, self.Events.event_type,
+                        self.Events.tickets_link, self.Artist.artist_id, self.Artist.artist_name, self.Event_Artist.is_headliner, 
+                        self.Genres.genre_name, self.Venues.venue_id, self.Venues.venue_name, self.Venues.venue_address, 
+                        self.Metropolitan_Area.metropolitan_name)\
+            .all()
+        
+        for row in query: 
+            artist_dict = {
+                'name': row.artist_name,
+                'is_headliner': row.is_headliner,
+            }  
+            event_id = row.event_id
+            event_index_dict = {event_list[index]['event_id']: index for index, event in enumerate(event_list)}
             
-            artist_genre_query = self.ArtistGenre.query.filter(
-                self.ArtistGenre.genre_id == genre_query.genre_id)
-            artist_ids = [artist_genre.artist_id for artist_genre in artist_genre_query]
-            artists_query = self.Artist.query.filter(
-                self.Artist.artist_id.in_(artist_ids))
-            artists = {artist.artist_id: artist.serializer() for artist in artists_query}
-            
-            event_artist_query = self.Event_Artist.query.filter(
-                self.Event_Artist.artist_id.in_(artist_ids))   
-            event_ids = [event_artist.event_id for event_artist in event_artist_query]
-            events_query = self.Events.query.filter(
-                self.Events.event_id.in_(event_ids))
+            if event_id in event_index_dict.keys():
+                event_index = event_index_dict[event_id]
+                event_genres = event_list[event_index]['genres']
+                event_artists = event_list[event_index]['artists']
+                genre_name = row.genre_name
                 
-        if not metro and not genre:
-            events_query = self.Events.query.all()
-            
-        events = [event for event in events_query]
-        for event in events_query:
-            event_id = event.event_id
-            print(event_id)
-            
-            # TODO?: List respective genres under each artist
-            event_artist_query = self.Event_Artist.query.filter(
-                self.Event_Artist.event_id == event_id).all()
-            if event_artist_query:
-                artist_id_and_bids = {item.artist_id: item.is_headliner for item in event_artist_query}
-                artist_ids = list(artist_id_and_bids.keys())
-                artists_query = self.Artist.query.filter(
-                    self.Artist.artist_id.in_(artist_ids))
-                artist_data = [{**artist.serializer(), 'headliner': artist_id_and_bids[artist.artist_id]} 
-                            for artist in artists_query]
-            else:
-                continue
-                    
+                if artist_dict['name'] not in [artist['name'] for artist in event_artists]:
+                    event_artists.append(artist_dict)
                 
-            artist_genre_query = self.ArtistGenre.query.filter(
-                self.ArtistGenre.artist_id.in_(artist_ids)).all()
-            genre_ids = [item.genre_id for item in artist_genre_query]
-            genre_query = self.Genres.query.filter(
-                self.Genres.genre_id.in_(genre_ids)).all()
-
-            venues_query = self.Venues.query.filter(
-                self.Venues.venue_id == event.venue_id).one_or_none()
-            cities_query = self.Cities.query.filter(
-                self.Cities.city_id == venues_query.city_id).one_or_none()
-            metro_query = self.Metropolitan_Area.query.filter(
-                self.Metropolitan_Area.metropolitan_id == cities_query.metropolitan_id).one_or_none()
-                
-            event_details.append({
-                'id': event_id,
-                'artists': artist_data,
-                'date': event.event_date,
-                'end_at': str(event.event_end_at),
-                'genres': [item.genre_name for item in genre_query],
-                'name': event.event_name,
-                'metro': metro_query.metropolitan_name,
-                'start_at': str(event.event_start_at),
-                'tickets_url': event.tickets_link,
-                'type': event.event_type,
-                'venue': venues_query.serializer(),
-            })
-            
-        return jsonify({'data': event_details})
+                if genre_name not in event_genres:
+                    event_genres.append(genre_name)
+            else:   
+                event_list.append({
+                    'event_id': row.event_id,
+                    'artists': [artist_dict],
+                    'genres': [row.genre_name],
+                    'date': row.event_date,
+                    'start_at': row.event_start_at,
+                    'tickets_url': row.tickets_link,
+                    'type': row.event_type,
+                    'venue': {
+                        'name': row.venue_name,
+                        'address': row.venue_address
+                    },
+                })
+        return event_list

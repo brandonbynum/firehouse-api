@@ -11,6 +11,7 @@ class EventService():
         self.Metropolitan_Area = models.MetropolitanArea
         self.Venues = models.Venues
         
+    # TODO: Filter date after now
     def upcoming_events_test(self, genre=None, metro=None):
         all_filters = []
         event_list = []

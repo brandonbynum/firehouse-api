@@ -3,14 +3,13 @@
 from flask import Flask, jsonify, request, abort
 from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger
-from sqlalchemy.sql import text
 import json
 import os
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from utilities.timer import Timer 
-from utilities.defaultConverters import dateToStringConverter
+from utilities.dateTimeEncoder import DateTimeEncoder
+#from utilities.defaultConverters import dateToStringConverter
 import models
 from errors import bad_request
 from api.services.event_services import EventService
@@ -106,7 +105,7 @@ def event_list():
     
     # TODO: Error handling to return 500 or 400 errors
     res = event_service.upcoming_events_test(genre_input, metro_input)
-    json_output = json.dumps(res, indent=4, default=dateToStringConverter)
+    json_output = json.dumps(res, indent=4, cls=DateTimeEncoder)
     
     return json_output
 

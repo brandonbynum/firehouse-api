@@ -1,4 +1,7 @@
 import models
+from operator import attrgetter
+from operator import itemgetter
+
 
 class EventService():
     def __init__(self):
@@ -36,6 +39,7 @@ class EventService():
                         self.Metropolitan_Area.metropolitan_name)\
             .all()
         
+        # Map data rows to UI models by event id and add to response list
         for row in query: 
             artist_dict = {
                 'name': row.artist_name,
@@ -52,7 +56,8 @@ class EventService():
                 
                 if artist_dict['name'] not in [artist['name'] for artist in event_artists]:
                     event_artists.append(artist_dict)
-                
+                    event_list[event_index]['artists'] = sorted(event_artists, key=itemgetter('is_headliner'), reverse=True)
+
                 if genre_name not in event_genres:
                     event_genres.append(genre_name)
             else:   

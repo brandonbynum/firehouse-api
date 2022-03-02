@@ -1,9 +1,10 @@
-import os
+from os import path, getenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from dotenv import load_dotenv
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+basedir = path.abspath(path.dirname(__file__))
+load_dotenv(path.join(basedir, '.env'))
 
 class Config(object):
     DEBUG = False
@@ -14,16 +15,15 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = ""
 
 class ProductionConfig(Config):
-    load_dotenv('./env/production.env')
     DEBUG = False
+    SQLALCHEMY_DATABASE_URI = getenv('PROD_DATABASE_URI')
+
 
 class DevelopmentConfig(Config):
-    load_dotenv('./env/development.env')
     DEVELOPMENT = True
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = getenv('DEV_DATABASE_URI')
 
 class TestingConfig(Config):
-    load_dotenv('./env/testing.env')
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = getenv('TEST_DATABASE_URI')

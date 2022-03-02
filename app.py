@@ -1,16 +1,13 @@
 # import aiohttp
 # import asyncio
-from flask import Flask, jsonify, request, abort
+from flask import Blueprint, Flask, jsonify, request, abort
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger
 import json
-import os
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from utilities.dateTimeEncoder import DateTimeEncoder
-import models
 from errors import bad_request
 from api.services.event_services import EventService
 
@@ -23,6 +20,9 @@ from models import Genres
 from models import MetropolitanArea
 from models import Venues
 
+from utilities.dateTimeEncoder import DateTimeEncoder
+from utilities.pretty_print import pretty_print as pp
+
 sentry_sdk.init(
     dsn='https://bbf1e21e7ed04190a0ff5be402ca21b4@o983081.ingest.sentry.io/5938602',
     integrations=[FlaskIntegration()],
@@ -34,12 +34,14 @@ sentry_sdk.init(
 )
 
 app = Flask(__name__)
-app.config.from_object('config.TestingConfig')
+app.config.from_object('config.DevelopmentConfig')
 CORS(app, resources={r'/api/*': {'origins': '*'}})
 db = SQLAlchemy(app)
 swagger = Swagger(app)
 
-@app.route('/')
+ui_api = Blueprint('api', __name__, url_prefix='/api')
+
+@ui_api.route('/')
 def hello_world():
     try:
         res = jsonify({
@@ -51,11 +53,11 @@ def hello_world():
     except Exception as e:
         return bad_request(str(e))
 
-@app.route('/debug-sentry')
+@ui_api.route('/debug-sentry')
 def trigger_error():
     division_by_zero = 1 / 0
 
-@app.route('/artists')
+@ui_api.route('/artists', methods=['GET'])
 def artist_list():
     """
     Artists endpoint returning a list of artists
@@ -64,25 +66,24 @@ def artist_list():
         200:
             description: A list of artists
     """
-    query = models.Artist.query.all()
-    artists = [{'id': artist.artist_id, 'name': artist.artist_name} for artist in query]
-    
+    query = Artist.query.all()
+    artists = [{'id': artist.id, 'name': artist.name} for artist in query]
     return jsonify({'data': artists})
     
-@app.route('/artists/<int:artist_id>')
+@ui_api.route('/artists/<int:artist_id>', methods=['GET'])
 def artist(artist_id):
-    query = Artist.query.filter(Artist.artist_id == artist_id).one_or_none()
+    query = Artist.query.filter(Artist.id == artist_id).one_or_none()
     
     return jsonify({
         'data': {
             'artist': {
-                'id': query.artist_id,
-                'name': query.artist_name
+                'id': query.id,
+                'name': query.name
             }
         },
     })
 
-@app.route('/api/events')
+@ui_api.route('/events')
 def event_list():
     """
     Returns list of upcoming events
@@ -92,58 +93,22 @@ def event_list():
             description: A list of events
     """
     event_service = EventService()
-    
-    genre_input = request.args.get('genre')
-    print(request.args)
     metro_input = request.args.get('metro')
-    
-    # TODO: Create helper function to remove "_"??
-    if genre_input and '_' in genre_input:
-        genre_input = genre_input.replace('_', ' ')
-    print(genre_input)
     
     if metro_input and '_' in metro_input:
         metro_input = metro_input.replace('_', ' ')
     
     # TODO: Error handling to return 500 or 400 errors
-    res = event_service.upcoming_events_test(genre_input, metro_input)
+    res = event_service.upcoming_events_test(metro_input)
     json_output = json.dumps(res, indent=4, cls=DateTimeEncoder)
     
     return json_output
-
-@app.route('/events/<int:event_id>')
-def event_details(event_id):
-    event = Events.query.filter(Events.event_id == event_id).one_or_none()
-    event_artist_query = EventArtist.query.filter(
-        EventArtist.event_id == event_id
-    ).one_or_none()
     
-    artist_query = Artist.query.filter(Artist.artist_id == event_artist_query.artist_id).one_or_none()
-    venue = Venues.query.filter(Venues.venue_id == event.venue_id).one_or_none()
-    city = Cities.query.filter(Cities.city_id == venue.city_id).one_or_none()
-    metropolitan_area = Metropolitan_Area.query.filter(
-        MetropolitanArea.metropolitan_id == city.metropolitan_id
-    ).one_or_none()
 
-    return jsonify({
-        'event_id': event.event_id,
-        'artist': artist_query.artist_name,
-        'date': event.event_date,
-        'city': {
-            'name': city.city_name,
-            'state': city.city_state,
-        },
-        'end_at': str(event.event_end_at),
-        'name': event.event_name,
-        'metropolitan_area': metropolitan_area.metropolitan_name,
-        'start_at': str(event.event_start_at),
-        'tickets_url': event.tickets_link,
-        'type': event.event_type,
-        'venue': {
-            'name': venue.venue_name,
-            'address': venue.venue_address,
-        },
-    })
+@ui_api.route('/events/<int:event_id>')
+def event_details(event_id):
+    res = EventService.get_event_details(event_id)
+    return jsonify(res)
     
 # @app.route('/events/import/<int:metro_id>')
 # def songkick_event_import(metro_id):
@@ -155,33 +120,16 @@ def event_details(event_id):
 #     asyncio.run(songkick_service.process_events(metro.metropolitan_name))
     
     
-    
-# @app.route('/event_artists')
-# def event_artist_list():
-#     event_artist_query = Event_Artist.query.all()
-    
-#     event_artists = [{
-#         'id': event_artist.id,
-#         'artist_id': event_artist.artist_id,
-#         'event_id': event_artist.event_id,
-#         'headliner': event_artist.is_headliner,
-#     } for event_artist in event_artist_query]
-        
-#     return jsonify({
-#         'data': event_artists
-#     })
-    
-    
-@app.route('/api/genres')
+@ui_api.route('/genres')
 def genre_list():
-    genre_query = Genres.query.order_by(Genres.genre_name).all()
+    genre_query = Genres.query.order_by(Genres.name).all()
     genres = []
 
     # TODO: Create service
     for genre in genre_query:
         genres.append({
-            'id': genre.genre_id,
-            'name': genre.genre_name,
+            'id': genre.id,
+            'name': genre.name,
         })
 
     return jsonify({
@@ -189,15 +137,15 @@ def genre_list():
     })
 
     
-@app.route('/api/metropolitans')
+@ui_api.route('/metropolitans')
 def metropolitan_list():
     metro_query = MetropolitanArea.query.all()
     metro_areas = []
     
     for area in metro_query:
         metro_areas.append({
-            'id': area.metropolitan_id,
-            'name': area.metropolitan_name,
+            'id': area.id,
+            'name': area.name,
         })
     
     return jsonify({
@@ -208,3 +156,5 @@ def metropolitan_list():
 # def venue_list():
 #     #Venues.query.filter(Venues.venue_id == event.venue_id).one_or_none()
 #     return None
+
+app.register_blueprint(ui_api)

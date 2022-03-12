@@ -28,6 +28,7 @@ SQLAlchemy = "==1.4.26"
 Werkzeug = "==2.0.2"
 flask-cors = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, Flask, jsonify, request, abort
 from flask_sqlalchemy import SQLAlchemy
-from flasgger import Swagger
+# from flasgger import Swagger
 import json
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration

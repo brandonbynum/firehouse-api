@@ -1,7 +1,4 @@
-# import aiohttp
-# import asyncio
 from flask import Blueprint, Flask, jsonify, request, abort
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger
 import json
@@ -40,8 +37,6 @@ swagger = Swagger(app)
 
 public_routes = Blueprint('public', __name__)
 ui_routes = Blueprint('api', __name__, url_prefix='/api')
-
-CORS(ui_routes, methods=["GET"], resources={r'/api/*': {'origins': 'localhost:3001'}})
 
 @app.after_request
 def cors_origin(response):

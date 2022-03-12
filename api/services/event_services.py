@@ -1,6 +1,7 @@
 from operator import attrgetter
 from operator import itemgetter
 from utilities import pretty_print
+from datetime import datetime
 
 from models import Artist
 from models import ArtistGenre
@@ -24,11 +25,13 @@ class EventService():
         
     # TODO: Filter date after now
     def upcoming_events_test(self, metro=None):
-        all_filters = []
+        all_filters = [Events.date >= datetime.today()]
         event_list = []
 
         if metro:
             all_filters.append(MetropolitanArea.name == metro)
+
+        print(f'----------METRO: {metro} ---------------')
                         
         query = Events.query\
             .filter(*all_filters)\
@@ -38,8 +41,11 @@ class EventService():
             .join(Genres, ArtistGenre.genre_id == Genres.id)\
             .join(Venues, Events.venue_id == Venues.id)\
             .join(Cities, Venues.city_id == Cities.id)\
+            .join(MetropolitanArea, Cities.metropolitan_id == MetropolitanArea.id)\
+            .order_by(Events.date)\
             .add_columns(
                 Events.id, 
+                Events.name.label('event_name'),
                 Events.date, 
                 Events.type,
                 Events.tickets_link, 
@@ -50,56 +56,31 @@ class EventService():
                 Venues.name.label('venue_name'),
             ).all()
 
-        for row in query:
-            print(row)
-
-        # Map data rows to UI models by event id and add to response list
-        for row in query: 
-            # artist_dict = {
-            #     'name': row.artist_name,
-            #     'headliner': row.headliner,
-            # }  
-            # event_id = row.id
-            # event_index_dict = {event_list[index]['id']: index for index, event in enumerate(event_list)}
-            
-            # Code to return all artists under respective event
-            # if event_id in event_index_dict.keys():
-            #     event_index = event_index_dict[event_id]
-            #     event_genres = event_list[event_index]['genres']
-            #     event_artists = event_list[event_index]['artists']
-            #     genre_name = row.genre_name
-                
-            #     if artist_dict['name'] not in [artist['name'] for artist in event_artists]:
-            #         event_artists.append(artist_dict)
-            #         event_list[event_index]['artists'] = sorted(event_artists, key=itemgetter('is_headliner'), reverse=True)
-
-            #     if genre_name not in event_genres:
-            #         event_genres.append(genre_name)
-            # else:   
-            #     event_list.append({
-            #         'event_id': row.event_id,
-            #         'artists': [artist_dict],
-            #         'genres': [row.genre_name],
-            #         'date': row.event_date,
-            #         'start_at': row.event_start_at,
-            #         'tickets_url': row.tickets_link,
-            #         'type': row.event_type,
-            #         'venue_name': row.venue_name,
-            #     })
-
-            event_list.append({
-                'event_id': row.id,
-                'artist': {
-                    'name': row.artist_name,
-                    'headliner': row.headliner
-                },
-                'city': row.city_name,
-                'genre': row.genre_name,
-                'date': row.date,
-                'tickets_url': row.tickets_link,
-                'type': row.type,
-                'venue': row.venue_name,
-            })
+        for raw_event in query:
+            # Check if event_id/artist.name exists in the list
+            # If so, add genre to existing item
+            # If not, add item to list
+            print('raw_event:', raw_event.id, raw_event.artist_name)
+            for hashIndex, hash_event in enumerate(event_list):
+                print('hash_event', hash_event['event_id'], hash_event['artist']['name'], '\n')
+                if raw_event.id == hash_event['event_id'] and raw_event.artist_name == hash_event['artist']['name']:
+                    event_list[hashIndex]['genres'].append(raw_event.genre_name)
+                    break
+            else:
+                event_list.append({
+                    'event_id': raw_event.id,
+                    'event_name': raw_event.event_name,
+                    'artist': {
+                        'name': raw_event.artist_name,
+                        'headliner': raw_event.headliner
+                    },
+                    'city': raw_event.city_name,
+                    'genres': [raw_event.genre_name],
+                    'date': raw_event.date.strftime("%m/%d/%Y"),
+                    'tickets_url': raw_event.tickets_link,
+                    'type': raw_event.type,
+                    'venue': raw_event.venue_name,
+                })
         return event_list
     
     def get_event_details(id_to_query):

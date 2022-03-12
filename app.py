@@ -35,13 +35,30 @@ sentry_sdk.init(
 
 app = Flask(__name__)
 app.config.from_object('config.DevelopmentConfig')
-CORS(app, resources={r'/api/*': {'origins': '*'}})
 db = SQLAlchemy(app)
 swagger = Swagger(app)
 
-ui_api = Blueprint('api', __name__, url_prefix='/api')
+public_routes = Blueprint('public', __name__)
+ui_routes = Blueprint('api', __name__, url_prefix='/api')
 
-@ui_api.route('/')
+CORS(ui_routes, methods=["GET"], resources={r'/api/*': {'origins': 'localhost:3001'}})
+
+@app.after_request
+def cors_origin(response):
+    allowed_origins = ['http://localhost:3001']
+    if allowed_origins == "*":
+        response.headers['Access-Control-Allow-Origin'] = "*"
+    else:
+        assert request.headers['Host']
+        if request.headers.get("Origin"):
+            response.headers["Access-Control-Allow-Origin"]  = request.headers["Origin"]
+        else:
+            for origin in allowed_origins:
+                if origin.find(request.headers["Host"]) != -1:
+                    response.headers["Access-Control-Allow-Origin"] = origin
+    return response
+
+@public_routes.route('/')
 def hello_world():
     try:
         res = jsonify({
@@ -53,11 +70,11 @@ def hello_world():
     except Exception as e:
         return bad_request(str(e))
 
-@ui_api.route('/debug-sentry')
+@ui_routes.route('/debug-sentry')
 def trigger_error():
     division_by_zero = 1 / 0
 
-@ui_api.route('/artists', methods=['GET'])
+@ui_routes.route('/artists', methods=['GET'])
 def artist_list():
     """
     Artists endpoint returning a list of artists
@@ -70,7 +87,7 @@ def artist_list():
     artists = [{'id': artist.id, 'name': artist.name} for artist in query]
     return jsonify({'data': artists})
     
-@ui_api.route('/artists/<int:artist_id>', methods=['GET'])
+@ui_routes.route('/artists/<int:artist_id>', methods=['GET'])
 def artist(artist_id):
     query = Artist.query.filter(Artist.id == artist_id).one_or_none()
     
@@ -83,7 +100,7 @@ def artist(artist_id):
         },
     })
 
-@ui_api.route('/events')
+@ui_routes.route('/events')
 def event_list():
     """
     Returns list of upcoming events
@@ -105,22 +122,12 @@ def event_list():
     return json_output
     
 
-@ui_api.route('/events/<int:event_id>')
+@ui_routes.route('/events/<int:event_id>')
 def event_details(event_id):
     res = EventService.get_event_details(event_id)
     return jsonify(res)
     
-# @app.route('/events/import/<int:metro_id>')
-# def songkick_event_import(metro_id):
-#     songkick_service = SongkickEventService()
-#     metro = Metropolitan_Area.query.filter_by(
-#         metropolitan_id = metro_id
-#     ).one_or_none()
-    
-#     asyncio.run(songkick_service.process_events(metro.metropolitan_name))
-    
-    
-@ui_api.route('/genres')
+@ui_routes.route('/genres')
 def genre_list():
     genre_query = Genres.query.order_by(Genres.name).all()
     genres = []
@@ -136,8 +143,7 @@ def genre_list():
         'data': genres
     })
 
-    
-@ui_api.route('/metropolitans')
+@ui_routes.route('/metropolitans')
 def metropolitan_list():
     metro_query = MetropolitanArea.query.all()
     metro_areas = []
@@ -151,10 +157,9 @@ def metropolitan_list():
     return jsonify({
         'data': metro_areas
     })
-    
-# @app.route('/venues')
-# def venue_list():
-#     #Venues.query.filter(Venues.venue_id == event.venue_id).one_or_none()
-#     return None
 
-app.register_blueprint(ui_api)
+app.register_blueprint(public_routes)
+app.register_blueprint(ui_routes)
+
+if __name__ == "__main__":
+    app.run(debug=True)

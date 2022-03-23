@@ -16,13 +16,13 @@ class Config(object):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL")
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL")
 
 class DevelopmentConfig(Config):
     DEVELOPMENT = True
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL")

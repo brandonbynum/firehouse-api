@@ -33,7 +33,7 @@ sentry_sdk.init(
 app = Flask(__name__)
 app.config.from_object('config.DevelopmentConfig')
 db = SQLAlchemy(app)
-swagger = Swagger(app)
+# swagger = Swagger(app)
 
 public_routes = Blueprint('public', __name__)
 ui_routes = Blueprint('api', __name__, url_prefix='/api')

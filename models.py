@@ -20,9 +20,6 @@ class Artist(db.Model):
     def __init__(self, id, name):
         self.id = id
         self.name = name
-      
-    def __repr_(self):
-        return f'<Artist {self.name!r}>'  
     
     def serializer(self):
         return {
@@ -39,14 +36,7 @@ class ArtistGenre(db.Model):
     def __init__(self):
         self.id = id
         self.artist_id = artist_id
-        self.genre_id = genre_id
-        
-    def __repr_(self):
-        return {
-            'id': self.id,
-            'artist_id': self.artist_id,
-            'genre_id': self.genre_id,
-        }  
+        self.genre_id = genre_id 
         
     def serializer(self):
         return {
@@ -66,11 +56,8 @@ class MetropolitanArea(db.Model):
     
     def __init__(self):
         self.id = id
-        self.name = name
-        
-    def __repr_(self):
-        return f'<MetropolitanArea {self.name!r}>'  
-    
+        self.name = name 
+  
     
     def serializer(self):
         return {
@@ -94,9 +81,6 @@ class Cities(db.Model):
         self.state = state
         self.country = country
         self.metropolitan_id = metropolitan_id
-    
-    def __repr_(self):
-        return f'<Cities {self.name!r}>'  
     
     def serializer(self):
         return {
@@ -125,13 +109,6 @@ class EventArtist(db.Model):
         self.artist_id = artist_id
         self.headliner = headliner
         self.created_at = created_at
-        
-    def __repr_(self):
-        return {
-            'event_id': self.event_id,
-            'artist_id': self.artist_id,
-            'headliner': self.headliner,
-        } 
     
     def serializer(self):
         return {
@@ -166,18 +143,6 @@ class Events(db.Model):
         self.date = date
         self.type = type
         self.created_on = created_on
-
-    def __repr_(self):
-        return {
-            'id': self.id,
-            'venue_id': self.venue_id,
-            'name': self.name,
-            'start_at': self.start_at,
-            'end_at':self.end_at,
-            'tickets_link': self.tickets_link,
-            'date': self.date.is_format(),
-            'type': self.type,    
-        } 
     
     def serializer(self):
         return {
@@ -203,9 +168,6 @@ class Genres(db.Model):
         self.id = id
         self.name = name
     
-    def __repr_(self):
-        return f'<Genres {self.name!r}>'  
-    
     def serializer(self):
         return {
             'id': serializer.id,
@@ -228,9 +190,6 @@ class Venues(db.Model):
         self.city_id = city_id
         self.name = name
         self.address = address
-
-    def __repr_(self):
-        return f'<Venues {self.name!r}>'
     
     def serializer(self):
         return {

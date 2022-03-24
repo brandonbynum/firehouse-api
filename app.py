@@ -20,8 +20,12 @@ from models import Venues
 from utilities.dateTimeEncoder import DateTimeEncoder
 from utilities.pretty_print import pretty_print as pp
 
+app = Flask(__name__)
+app.config.from_object('config.DevelopmentConfig')
+db = SQLAlchemy(app)
+
 sentry_sdk.init(
-    dsn='https://bbf1e21e7ed04190a0ff5be402ca21b4@o983081.ingest.sentry.io/5938602',
+    dsn=config.SENTRY_DSN_URI,
     integrations=[FlaskIntegration()],
 
     # Set traces_sample_rate to 1.0 to capture 100%
@@ -29,10 +33,6 @@ sentry_sdk.init(
     # We recommend adjusting this value in production.
     traces_sample_rate=1.0
 )
-
-app = Flask(__name__)
-app.config.from_object('config.DevelopmentConfig')
-db = SQLAlchemy(app)
 # swagger = Swagger(app)
 
 public_routes = Blueprint('public', __name__)

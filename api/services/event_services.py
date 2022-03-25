@@ -2,6 +2,7 @@ from operator import attrgetter
 from operator import itemgetter
 from utilities import pretty_print
 from datetime import datetime
+from sqlalchemy import func
 
 from models import Artist
 from models import ArtistGenre
@@ -29,7 +30,7 @@ class EventService():
         event_list = []
 
         if metro:
-            all_filters.append(MetropolitanArea.name == metro)
+            all_filters.append(func.lower(MetropolitanArea.name) == metro.lower())
 
         print(f'----------METRO: {metro} ---------------')
                         

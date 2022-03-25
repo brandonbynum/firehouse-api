@@ -25,7 +25,7 @@ app.config.from_object('config.DevelopmentConfig')
 db = SQLAlchemy(app)
 
 sentry_sdk.init(
-    dsn=config.SENTRY_DSN_URI,
+    dsn=app.config.SENTRY_DSN_URI,
     integrations=[FlaskIntegration()],
 
     # Set traces_sample_rate to 1.0 to capture 100%

@@ -20,11 +20,11 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if getenv("DATABASE_URL").startswith("postgres://") else getenv("DATABASE_URL")
     SENTRY_DSN_URI = getenv("SENTRY_DSN_URI")
 
 class DevelopmentConfig(Config):
     DEVELOPMENT = True
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if getenv("DATABASE_URL").startswith("postgres://") else getenv("DATABASE_URL")
     SENTRY_DSN_URI = getenv("SENTRY_DSN_URI")

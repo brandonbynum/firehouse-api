@@ -58,6 +58,7 @@ def hello_world():
     try:
         res = jsonify({
             'message': 'API server up and running.',
+            'config': app.config['SQLALCHEMY_DATABASE_URI']
         })
         res.headers.add('Access-Control-Allow-Origin', '*')
         res.status_code = 201
@@ -114,7 +115,7 @@ def event_list():
     res = event_service.upcoming_events_test(metro_input)
     json_output = json.dumps(res, indent=4, cls=DateTimeEncoder)
     
-    return json_output
+    return jsonify(json.loads(json_output))
     
 
 @ui_routes.route('/events/<int:event_id>')

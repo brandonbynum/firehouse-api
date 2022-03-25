@@ -25,7 +25,7 @@ app.config.from_object('config.DevelopmentConfig')
 db = SQLAlchemy(app)
 
 sentry_sdk.init(
-    dsn='https://bbf1e21e7ed04190a0ff5be402ca21b4@o983081.ingest.sentry.io/5938602',
+    dsn=app.config['SENTRY_DSN_URI'],
     integrations=[FlaskIntegration()],
 
     # Set traces_sample_rate to 1.0 to capture 100%
@@ -38,26 +38,26 @@ sentry_sdk.init(
 public_routes = Blueprint('public', __name__)
 ui_routes = Blueprint('api', __name__, url_prefix='/api')
 
-@app.after_request
-def cors_origin(response):
-    allowed_origins = ['http://localhost:3001']
-    if allowed_origins == "*":
-        response.headers['Access-Control-Allow-Origin'] = "*"
-    else:
-        assert request.headers['Host']
-        if request.headers.get("Origin"):
-            response.headers["Access-Control-Allow-Origin"]  = request.headers["Origin"]
-        else:
-            for origin in allowed_origins:
-                if origin.find(request.headers["Host"]) != -1:
-                    response.headers["Access-Control-Allow-Origin"] = origin
-    return response
+# @app.after_request
+# def cors_origin(response):
+#     allowed_origins = ['http://localhost:3001']
+#     if allowed_origins == "*":
+#         response.headers['Access-Control-Allow-Origin'] = "*"
+#     else:
+#         assert request.headers['Host']
+#         if request.headers.get("Origin"):
+#             response.headers["Access-Control-Allow-Origin"]  = request.headers["Origin"]
+#         else:
+#             for origin in allowed_origins:
+#                 if origin.find(request.headers["Host"]) != -1:
+#                     response.headers["Access-Control-Allow-Origin"] = origin
+#     return response
 
 @public_routes.route('/')
 def hello_world():
     try:
         res = jsonify({
-            'message': 'API server up and running.'
+            'message': 'API server up and running.',
         })
         res.headers.add('Access-Control-Allow-Origin', '*')
         res.status_code = 201

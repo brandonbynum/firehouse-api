@@ -38,27 +38,26 @@ sentry_sdk.init(
 public_routes = Blueprint('public', __name__)
 ui_routes = Blueprint('api', __name__, url_prefix='/api')
 
-# @app.after_request
-# def cors_origin(response):
-#     allowed_origins = ['http://localhost:3001']
-#     if allowed_origins == "*":
-#         response.headers['Access-Control-Allow-Origin'] = "*"
-#     else:
-#         assert request.headers['Host']
-#         if request.headers.get("Origin"):
-#             response.headers["Access-Control-Allow-Origin"]  = request.headers["Origin"]
-#         else:
-#             for origin in allowed_origins:
-#                 if origin.find(request.headers["Host"]) != -1:
-#                     response.headers["Access-Control-Allow-Origin"] = origin
-#     return response
+@app.after_request
+def cors_origin(response):
+    allowed_origins = ['http://localhost:3001']
+    if allowed_origins == "*":
+        response.headers['Access-Control-Allow-Origin'] = "*"
+    else:
+        assert request.headers['Host']
+        if request.headers.get("Origin"):
+            response.headers["Access-Control-Allow-Origin"]  = request.headers["Origin"]
+        else:
+            for origin in allowed_origins:
+                if origin.find(request.headers["Host"]) != -1:
+                    response.headers["Access-Control-Allow-Origin"] = origin
+    return response
 
 @public_routes.route('/')
 def hello_world():
     try:
         res = jsonify({
             'message': 'API server up and running.',
-            'config': app.config['SQLALCHEMY_DATABASE_URI']
         })
         res.headers.add('Access-Control-Allow-Origin', '*')
         res.status_code = 201

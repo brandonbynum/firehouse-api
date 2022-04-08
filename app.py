@@ -28,7 +28,7 @@ cors = CORS(
     app, 
     resources={
         r"/api/*": {
-            "origins": "https://develop--effortless-snickerdoodle-633a7a.netlify.app/"
+            "origins": ["https://develop--effortless-snickerdoodle-633a7a.netlify.app/"]
         }
     }
 )

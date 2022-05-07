@@ -24,13 +24,16 @@ from utilities.pretty_print import pretty_print as pp
 app = Flask(__name__)
 app.config.from_object('config.DevelopmentConfig')
 db = SQLAlchemy(app)
-cors = CORS(
-    app, 
-    resources={
-        r"/api/*": {
-            "origins": ["https://develop--effortless-snickerdoodle-633a7a.netlify.app"]
-        }
-    }
+public_routes = Blueprint('public', __name__)
+ui_routes = Blueprint('api', __name__, url_prefix='/api')
+
+print(app.config["ALLOWED_ORIGINS"])
+print(app.config["SQLALCHEMY_DATABASE_URI"])
+
+CORS(
+    ui_routes, 
+    origins=app.config["ALLOWED_ORIGINS"],
+    supports_credentials=True
 )
 
 sentry_sdk.init(
@@ -42,25 +45,6 @@ sentry_sdk.init(
     # We recommend adjusting this value in production.
     traces_sample_rate=1.0
 )
-# swagger = Swagger(app)
-
-public_routes = Blueprint('public', __name__)
-ui_routes = Blueprint('api', __name__, url_prefix='/api')
-
-# @app.after_request
-# def cors_origin(response):
-#     allowed_origins = ['https://develop--effortless-snickerdoodle-633a7a.netlify.app/']
-#     if allowed_origins == "*":
-#         response.headers['Access-Control-Allow-Origin'] = "*"
-#     else:
-#         assert request.headers['Host']
-#         if request.headers.get("Origin"):
-#             response.headers["Access-Control-Allow-Origin"]  = request.headers["Origin"]
-#         else:
-#             for origin in allowed_origins:
-#                 if origin.find(request.headers["Host"]) != -1:
-#                     response.headers["Access-Control-Allow-Origin"] = origin
-#     return response
 
 @public_routes.route('/')
 def hello_world():

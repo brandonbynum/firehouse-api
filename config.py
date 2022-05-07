@@ -1,10 +1,9 @@
 from os import path, getenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
-from dotenv import load_dotenv
+from os import environ, path
 
 basedir = path.abspath(path.dirname(__file__))
-load_dotenv(path.join(basedir, ".env"))
 
 class Config(object):
     DEBUG = False
@@ -13,18 +12,23 @@ class Config(object):
     SECRET_KEY = ""
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = ""
+    ALLOWED_ORIGINS = []
 
-class ProductionConfig(Config):
-    DEBUG = False
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL")
+# class ProductionConfig(Config):
+#     DEBUG = False
+#     SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL")
+#     ALLOWED_ORIGINS = [getenv("ALLOWED_ORIGINS")]
 
-class TestingConfig(Config):
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if getenv("DATABASE_URL").startswith("postgres://") else getenv("DATABASE_URL")
-    SENTRY_DSN_URI = getenv("SENTRY_DSN_URI")
+# class TestingConfig(Config):
+#     TESTING = True
+#     SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if getenv("DATABASE_URL").startswith("postgres://") else getenv("DATABASE_URL")
+#     SENTRY_DSN_URI = getenv("SENTRY_DSN_URI")
+#     ALLOWED_ORIGINS = [getenv("ALLOWED_ORIGINS")]
 
 class DevelopmentConfig(Config):
+    print(getenv("DATABSE_URL"))
     DEVELOPMENT = True
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if getenv("DATABASE_URL").startswith("postgres://") else getenv("DATABASE_URL")
-    SENTRY_DSN_URI = getenv("SENTRY_DSN_URI")
+    SQLALCHEMY_DATABASE_URI = environ.get("DATABASE_URL")
+    SENTRY_DSN_URI = environ.get("SENTRY_DSN_URI")
+    ALLOWED_ORIGINS = [environ.get("ALLOWED_ORIGINS")]

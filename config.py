@@ -31,6 +31,6 @@ class Config(object):
 class DevelopmentConfig(Config):
     DEVELOPMENT = True
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = "postgresql".join(environ.get("DATABASE_URL").split("postgres"))
+    SQLALCHEMY_DATABASE_URI = "postgresql".join(environ.get("HEROKU_POSTGRESQL_ONYX_URL").split("postgres"))
     SENTRY_DSN_URI = environ.get("SENTRY_DSN_URI")
     ALLOWED_ORIGINS = [environ.get("ALLOWED_ORIGINS")]

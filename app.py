@@ -31,9 +31,7 @@ ui_routes = Blueprint("api", __name__, url_prefix="/api")
 print(app.config["ALLOWED_ORIGINS"])
 print(app.config["SQLALCHEMY_DATABASE_URI"])
 
-CORS(app, origins=app.config["ALLOWED_ORIGINS"], supports_credentials=True)
-CORS(ui_routes, origins=app.config["ALLOWED_ORIGINS"], supports_credentials=True)
-CORS(public_routes, origins=app.config["ALLOWED_ORIGINS"], supports_credentials=True)
+CORS(app)
 
 sentry_sdk.init(
     dsn=app.config["SENTRY_DSN_URI"],

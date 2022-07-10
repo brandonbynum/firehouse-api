@@ -9,28 +9,17 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 
 from errors import bad_request
 from api.services.event_services import EventService
+from utilities.dateTimeEncoder import DateTimeEncoder
 
 from models import Artist
-from models import ArtistGenre
-from models import Cities
-from models import Events
-from models import EventArtist
 from models import Genres
 from models import MetropolitanArea
-from models import Venues
-
-from utilities.dateTimeEncoder import DateTimeEncoder
-from utilities.pretty_print import pretty_print as pp
 
 app = Flask(__name__)
 app.config.from_object("config.DevelopmentConfig")
 db = SQLAlchemy(app)
 public_routes = Blueprint("public", __name__)
 ui_routes = Blueprint("api", __name__, url_prefix="/api")
-
-print(app.config["ALLOWED_ORIGINS"])
-print(app.config["SQLALCHEMY_DATABASE_URI"])
-
 CORS(app)
 
 sentry_sdk.init(
@@ -142,7 +131,7 @@ def metropolitan_list():
         metro_areas.append(
             {
                 "id": area.id,
-                "name": area.name,
+                "name": area.name.upper(),
             }
         )
 

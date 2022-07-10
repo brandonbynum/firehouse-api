@@ -2,12 +2,9 @@ name: 🚀 Release Workflow
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [develop, main]
   push:
-    branches: 
-      - develop
+    branches: [develop, main]
 
 jobs:
   release:

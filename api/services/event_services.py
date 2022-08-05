@@ -49,6 +49,7 @@ class EventService:
                 Events.id,
                 Events.name.label("event_name"),
                 Events.date,
+                Events.end_date,
                 Events.type,
                 Events.tickets_link,
                 EventArtist.headliner,
@@ -69,6 +70,10 @@ class EventService:
                     event_list[hashIndex]["genres"].append(raw_event.genre_name)
                     break
             else:
+                end_date = raw_event.end_date
+                if raw_event.end_date != None:
+                    end_date = raw_event.end_date.strftime("%a, %b %-d")
+
                 event_list.append(
                     {
                         "event_id": raw_event.id,
@@ -77,6 +82,7 @@ class EventService:
                         "city": raw_event.city_name,
                         "genres": [raw_event.genre_name],
                         "date": raw_event.date.strftime("%a, %b %-d"),
+                        "end_date": end_date,
                         "tickets_url": raw_event.tickets_link,
                         "type": raw_event.type,
                         "venue": raw_event.venue_name,
@@ -85,8 +91,6 @@ class EventService:
         return event_list
 
     def get_event_details(id_to_query):
-        artists = []
-        event_details = []
         query_res = (
             Events.query.filter(Events.id == id_to_query)
             .join(EventArtist, Events.id == EventArtist.event_id)
@@ -97,6 +101,7 @@ class EventService:
             .add_columns(
                 Events.id,
                 Events.date,
+                Events.end_date,
                 Events.type,
                 Events.start_at,
                 Events.end_at,
@@ -112,8 +117,8 @@ class EventService:
             )
         )
 
+        artists = []
         for row in query_res:
-            event_details.append(row)
             artists.append(
                 {
                     "name": row.artist_name,
@@ -122,21 +127,27 @@ class EventService:
             )
             artists.sort(key=lambda artist: artist["headliner"], reverse=True)
 
+        base_event = query_res[0]
+        end_date_formatted = base_event.end_date
+        if base_event.end_date != None:
+            end_date_formatted = base_event.end_date.strftime("%a, %b %-d")
+
         res = {
-            "event_id": query_res[0].id,
+            "event_id": base_event.id,
             "artists": artists,
-            "date": query_res[0].date,
-            "end_at": query_res[0].end_at and str(query_res[0].end_at),
-            "name": query_res[0].name,
-            "metropolitan_area": query_res[0].metropolitan_name,
-            "start_at": query_res[0].start_at and str(query_res[0].start_at),
-            "tickets_url": query_res[0].tickets_link,
-            "type": query_res[0].type,
+            "date": base_event.date.strftime("%a, %b %-d"),
+            "end_date": end_date_formatted,
+            "end_at": base_event.end_at and str(base_event.end_at),
+            "name": base_event.name,
+            "metropolitan_area": base_event.metropolitan_name,
+            "start_at": base_event.start_at and str(base_event.start_at),
+            "tickets_url": base_event.tickets_link,
+            "type": base_event.type,
             "venue": {
-                "name": query_res[0].venue_name,
-                "address": query_res[0].address,
-                "city": query_res[0].city_name,
-                "state": query_res[0].state,
+                "name": base_event.venue_name,
+                "address": base_event.address,
+                "city": base_event.city_name,
+                "state": base_event.state,
             },
         }
 
